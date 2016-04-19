@@ -1,11 +1,20 @@
 from random import randint
-f = open("/Users/Michael/Desktop/patientData.txt", "w")
+import argparse
+
+# Args as follows : filen
+
+parser = argparse.ArgumentParser(description=' College students data generator ')
+parser.add_argument('-o', action="store", dest="outputfile", help='provide output file name', default='patientData.txt')
+parser.add_argument('-n', action="store", dest="num",  type=int , help="nubmer of rows in the dataset" , default=4000000)
+results = parser.parse_args()
+
+f = open(results.outputfile, "w")
 alphabetList = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z']
 genderList = ["male", "female"]
 gradeList = ["0", "1", "2", "3"]
 majorList = ["English", "Mathematics", "ComputerScience", "ElectricalEngineering", "Business", "Economics", "Biology", "Law", "PoliticalScience", "IndustrialEngineering"]
 i = 0
-while i != 4000000:
+while i != results.num:
 	i = i + 1
 	firstNameLength = randint(1, 10)
 	lastNameLength = randint(1, 15)
@@ -33,10 +42,10 @@ while i != 4000000:
 		age = randint(24, 25)
 	if major == "ComputerScience":
 		if fault2 <= 5000:#fault version 5000/1000000
-			age = NaN
+			age = 99999999
 	fault3 = randint(0, 5000000)
 	if fault3 <= 5000: #fault version 5000/5000000
-		f.write(firstName + " " + lastName + " " + gender + " " + grade + " " + age + " " + major + "\n")
+		f.write(firstName + " " + lastName + " " + gender + " " + grade + " " + str(age) + " " + major + "\n")
 	else:
 		f.write(firstName + " " + lastName + " " + gender + " " + str(age) + " " + grade + " " + major + "\n")
 f.close()
