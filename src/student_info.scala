@@ -2,33 +2,15 @@
  * Created by Michael on 4/14/16.
  */
 
-import java.io.{PrintWriter, File}
-import java.lang.Exception
+import java.util.Calendar
 import java.util.logging._
 
-import org.apache.spark.SparkContext._
-import org.apache.spark.{rdd, SparkConf, SparkContext}
-import org.apache.spark.api.java.JavaPairRDD
-import org.apache.spark.api.java.JavaRDD
-import org.apache.spark.api.java.JavaSparkContext
-import org.apache.spark.api.java.function.{FlatMapFunction, Function2, PairFunction}
-import org.apache.spark.rdd.{PairRDDFunctions, RDD}
-import scala.Tuple2
-import java.util.Calendar
+import org.apache.spark.{SparkConf, SparkContext}
 //import java.util.List
-import java.util.StringTokenizer
-
-import scala.collection.mutable.MutableList
-import scala.reflect.ClassTag
 
 //remove if not needed
-import scala.collection.JavaConversions._
-
-import scala.util.control.Breaks._
 import org.apache.spark.lineage.LineageContext
 import org.apache.spark.lineage.LineageContext._
-import scala.sys.process._
-import org.apache.spark.delta.DeltaWorkflowManager
 
 object student_info {
   private val exhaustive = 0
@@ -44,24 +26,10 @@ object student_info {
       logger.setLevel(Level.INFO)
       logger.addHandler(fh)
 
-
       //set up spark configuration
       val sparkConf = new SparkConf().setMaster("local[6]")
       sparkConf.setAppName("Student_Info")
         .set("spark.executor.memory", "2g")
-
-      //set up lineage
-      var lineage = true
-      var logFile = "hdfs://scai01.cs.ucla.edu:9000/clash/data/"
-      if (args.size < 2) {
-        logFile = "test_log"
-        lineage = true
-      } else {
-        lineage = args(0).toBoolean
-        logFile += args(1)
-        sparkConf.setMaster("spark://SCAI01.CS.UCLA.EDU:7077")
-      }
-      //
 
       //set up spark context
       val ctx = new SparkContext(sparkConf)
@@ -69,16 +37,7 @@ object student_info {
 
       //set up lineage context
       val lc = new LineageContext(ctx)
-      lc.setCaptureLineage(lineage)
-      //
-
-      //Prepare for Hadoop MapReduce - for correctness test only
-      /*
-      val clw = new commandLineOperations()
-      clw.commandLineWorks()
-      //Run Hadoop to have a groundTruth
-      Seq("hadoop", "jar", "/Users/Michael/Documents/UCLA Senior/F15/Research-Fall2015/benchmark/examples/WordCount1.jar", "WordCount1", "-r", "1", "/Users/Michael/IdeaProjects/InvertedIndex/myLog", "output").!!
-      */
+      lc.setCaptureLineage(true)
 
       //start recording lineage time
       val LineageStartTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
@@ -86,7 +45,7 @@ object student_info {
       logger.log(Level.INFO, "Record Lineage time starts at " + LineageStartTimestamp)
 
       //spark program starts here
-      val records = lc.textFile("/Users/Michael/Desktop/patientData.txt", 1)
+      val records = lc.textFile("patientData.txt", 1)
       val grade_age_pair = records.map(line => {
         val list = line.split(" ")
         (list(4).toInt, list(3).toInt)
