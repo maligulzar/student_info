@@ -153,12 +153,33 @@ object student_info {
 
 
 		///***To View Overlapping Data **/
-		//                     rdd2.filter {
-		//                        s =>
-		//                             array.contains(s.asInstanceOf[((Any,Int),Any)]._1._2)
-		//                   }.show()
-		               println("Overlapping error inducing inputs from two lineages : " +
-		                   overlap.size)
+
+		val mapped =
+			//rdd2.filter {
+//			s =>
+//				array.contains(s.asInstanceOf[((Any, Int), Any)]._1._2)
+//		}
+		rdd2.show().toRDD.map(s => (s.toString, 0L))
+
+		println("Overlapping error inducing inputs from two lineages : " +
+			overlap.size)
+
+
+		val DeltaDebuggingStartTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
+		val DeltaDebuggingStartTime = System.nanoTime()
+		logger.log(Level.INFO, "Record DeltaDebugging (unadjusted) time starts at " + DeltaDebuggingStartTimestamp)
+
+		val delta_debug = new DD_NonEx[String, Long]
+		val returnedRDD = delta_debug.ddgen(mapped, new Test, new Split, lm, fh)
+
+		println(">>>>>>>>>>>>>  DD Done  <<<<<<<<<<<<<<<")
+		val ss = returnedRDD.collect.foreach(println)
+
+		val DeltaDebuggingEndTime = System.nanoTime()
+		val DeltaDebuggingEndTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
+		logger.log(Level.INFO, "DeltaDebugging (unadjusted) ends at " + DeltaDebuggingEndTimestamp)
+		logger.log(Level.INFO, "DeltaDebugging (unadjusted) takes " + (DeltaDebuggingEndTime - DeltaDebuggingStartTime) / 1000 + " milliseconds")
+
 
 
 
