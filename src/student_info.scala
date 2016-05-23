@@ -39,7 +39,8 @@ object student_info {
 
 		//set up lineage context
 		val lc = new LineageContext(ctx)
-		lc.setCaptureLineage(true)
+
+
 
 		//start recording lineage time
 		val LineageStartTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
@@ -47,7 +48,10 @@ object student_info {
 		logger.log(Level.INFO, "Record Lineage time starts at " + LineageStartTimestamp)
 
 		//spark program starts here
-		val records = lc.textFile("src/patientData.txt", 1)
+				lc.setCaptureLineage(true)
+
+
+		val records = lc.textFile("../../Desktop/patientData.txt", 1)
 		// records.persist()
 		val grade_age_pair = records.map(line => {
 			val list = line.split(" ")
@@ -60,6 +64,8 @@ object student_info {
 			var num = 1
 			while (itr.hasNext) {
 				moving_average = moving_average + (itr.next() - moving_average) / num
+//				moving_average = moving_average * (num - 1) / num + itr.next() / num
+
 				num = num + 1
 			}
 			(pair._1, moving_average)
@@ -68,7 +74,11 @@ object student_info {
 		val out = average_age_by_grade.collectWithId()
 
 		//print out the result for debugging purpose
+		var list1 = List[Long]()
 		for (o <- out) {
+			if (o._1._1 > 3 || o._1._2 > 25 || o._1._2 < 18) {
+				list1 = o._2 :: list1
+			}
 			println(o._1._1 + ": " + o._1._2 + " - " + o._2)
 		}
 
@@ -78,110 +88,115 @@ object student_info {
 		var linRdd = average_age_by_grade.getLineage()
 		linRdd.collect
 		linRdd = linRdd.filter(s => {
-			//list.contains(s)
-			s == 17179869185L
+			list1.contains(s)
+//			s == 17179869185L
 		})
 		linRdd = linRdd.goBackAll()
-		println("Error inducing input from first error : " + linRdd.count())
+		val show1Rdd = linRdd.show()
 
-		// linRdd.collect().foreach(println)
-		//   val show1Rdd = linRdd.show().toRDD
+		println("Error inducing input from first error : " + show1Rdd.count())
 
 		println(">>>>>>>>>>>>>>>>>>>>>>>>>>   First Lineage Tracing done  <<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
+
 		lc.setCaptureLineage(true)
 
-		//  val lc2 = new LineageContext(ctx)
-		// lc2.setCaptureLineage(true)
+        //  val lc2 = new LineageContext(ctx)
+        // lc2.setCaptureLineage(true)
 
-		// Second run for overlapping lineage
-		val major_age_pair = lc.textFile("src/patientData.txt", 1).map(line => {
-			val list = line.split(" ")
-			(list(5), list(3).toInt)
-		})
-		val average_age_by_major = major_age_pair.groupByKey
-			.map(pair => {
-			val itr = pair._2.toIterator
-			var moving_average = 0.0
-			var num = 1
-			while (itr.hasNext) {
-				moving_average = moving_average + (itr.next() - moving_average) / num
-				num = num + 1
-			}
-			(pair._1, moving_average)
-		})
+        // Second run for overlapping lineage
+        val major_age_pair = lc.textFile("../../Desktop/patientData.txt", 1).map(line => {
+          val list = line.split(" ")
+          (list(5), list(3).toInt)
+        })
+        val average_age_by_major = major_age_pair.groupByKey
+          .map(pair => {
+          val itr = pair._2.toIterator
+          var moving_average = 0.0
+          var num = 1
+          while (itr.hasNext) {
+            moving_average = moving_average + (itr.next() - moving_average) / num
+            num = num + 1
+          }
+          (pair._1, moving_average)
+        })
 
-		val out2 = average_age_by_major.collectWithId()
+        val out2 = average_age_by_major.collectWithId()
 
-		//print out the result for debugging purpose
-		for (o <- out2) {
-			println(o._1._1 + ": " + o._1._2 + " - " + o._2)
-		}
-
-
-		// lc2.setCaptureLineage(false)
-		//stop capturing lineage information
-		lc.setCaptureLineage(false)
-		Thread.sleep(1000)
+        //print out the result for debugging purpose
+        var list2 = List[Long]()
+        for (o <- out2) {
+          if (o._1._2 > 25 || o._1._2 < 18) {
+            list2 = o._2 :: list2
+          }
+          println(o._1._1 + ": " + o._1._2 + " - " + o._2)
+        }
 
 
-		println(">>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
+        // lc2.setCaptureLineage(false)
+        //stop capturing lineage information
+        lc.setCaptureLineage(false)
+        Thread.sleep(1000)
 
-		//get the list of lineage id
-		//      var list = List[Long]()
-		//      var list2 = List[Long]()
-		//      for (o <- out) {
-		//        if ((o._1._1 == 0 && (o._1._2 > 19 || o._1._2 < 18))
-		//                  || (o._1._1 == 1 && (o._1._2 > 21 || o._1._2 < 20))
-		//                  || (o._1._1 == 2 && (o._1._2 > 23 || o._1._2 < 22))
-		//                  || (o._1._1 == 3 && (o._1._2 > 25 || o._1._2 < 24))) {
-		//          list = o._2 :: list
-		//        }
-		//      }
+        println(">>>>>>>>>>>>>>>>>>>>>>>>>><<<<<<<<<<<<<<<<<<<<<<<<<<<<<")
 
-		var rdd2 = average_age_by_major.getLineage()
-		rdd2.collect
-		rdd2 = rdd2.filter(s => {
-			//list.contains(s)
-			s == 8589934592L
-		})
-		rdd2 = rdd2.goBackAll()
-		println("Error inducing input from second error : " + rdd2.count())
-		// val show2RDD = linRdd.show().toRDD
-		val overlap = rdd2.intersection(linRdd).collect
-		val array = overlap.map(s => s.asInstanceOf[(Int, Int)]._2)
+        var rdd2 = average_age_by_major.getLineage()
+        rdd2.collect
+        rdd2 = rdd2.filter(s => {
+          list2.contains(s)
+    //			s == 8589934592L
 
-
-		///***To View Overlapping Data **/
-
-		val mapped =
-			//rdd2.filter {
-//			s =>
-//				array.contains(s.asInstanceOf[((Any, Int), Any)]._1._2)
-//		}
-		rdd2.show().toRDD.map(s => (s.toString, 0L))
-
-		println("Overlapping error inducing inputs from two lineages : " +
-			overlap.size)
-
-
-		val DeltaDebuggingStartTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
-		val DeltaDebuggingStartTime = System.nanoTime()
-		logger.log(Level.INFO, "Record DeltaDebugging (unadjusted) time starts at " + DeltaDebuggingStartTimestamp)
-
-		val delta_debug = new DD_NonEx[String, Long]
-		val returnedRDD = delta_debug.ddgen(mapped, new Test, new Split, lm, fh)
-
-		println(">>>>>>>>>>>>>  DD Done  <<<<<<<<<<<<<<<")
-		val ss = returnedRDD.collect.foreach(println)
-
-		val DeltaDebuggingEndTime = System.nanoTime()
-		val DeltaDebuggingEndTimestamp = new java.sql.Timestamp(Calendar.getInstance.getTime.getTime)
-		logger.log(Level.INFO, "DeltaDebugging (unadjusted) ends at " + DeltaDebuggingEndTimestamp)
-		logger.log(Level.INFO, "DeltaDebugging (unadjusted) takes " + (DeltaDebuggingEndTime - DeltaDebuggingStartTime) / 1000 + " milliseconds")
+        })
+        rdd2 = rdd2.goBackAll()
+        val show2Rdd = rdd2.show()
+        println("Error inducing input from second error : " + show2Rdd.count())
 
 
 
+        val overlap = show1Rdd.intersection(show2Rdd)
+    //		val array = overlap.map(s => s.asInstanceOf[(Int, Int)]._2)
+
+
+        ///***To View Overlapping Data **/
+
+    //		val mapped = rdd2.show().toRDD.map(s => (s.toString, 0L))
+
+        println("Overlapping error inducing inputs from two lineages : " +
+          overlap.count)
+
+        val mappedRDD = overlap.map(s => {
+          val list = s.split(" ")
+          ((list(4).toInt, list(5)), list(3).toInt)
+        })
+
+        val delta_debug = new DD[((Int, String), Int)]
+        var returnList = delta_debug.ddgen(mappedRDD, new Test, new Split_v2, lm, fh, List(false, false))
+
+        println(">>>>>>>>>>>>>>>>>>>>>" + returnList)
+
+        if (returnList(0) == false) {
+          println("After DD again, running first test is needed")
+          val mappedRdd1 = show1Rdd.map(s => {
+            val list = s.split(" ")
+            ((list(4).toInt, list(5)), list(3).toInt)
+          })
+          val delta_debug2 = new DD[((Int, String), Int)]
+          returnList = delta_debug2.ddgen(mappedRdd1, new Test, new Split_v2, lm, fh, returnList)
+        }
+        if (returnList(1) == false) {
+          println("After DD again, running second test is needed")
+          val mappedRdd2 = show2Rdd.map(s => {
+            val list = s.split(" ")
+            ((list(4).toInt, list(5)), list(3).toInt)
+          })
+          val delta_debug3 = new DD[((Int, String), Int)]
+          returnList = delta_debug3.ddgen(mappedRdd2, new Test, new Split_v2, lm, fh, returnList)
+        }
+
+        println("***************************" + returnList)
+
+        val endTime = System.nanoTime()
+        logger.log(Level.INFO, "Record total time: Delta-Debugging + Lineage + goNext:" + (endTime - LineageStartTime)/1000 + " microseconds")
 
 		println("Job's DONE!")
 		ctx.stop()
