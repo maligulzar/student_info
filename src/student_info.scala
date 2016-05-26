@@ -152,14 +152,7 @@ object student_info {
         println("Error inducing input from second error : " + show2Rdd.count())
 
 
-
         val overlap = show1Rdd.intersection(show2Rdd)
-    //		val array = overlap.map(s => s.asInstanceOf[(Int, Int)]._2)
-
-
-        ///***To View Overlapping Data **/
-
-    //		val mapped = rdd2.show().toRDD.map(s => (s.toString, 0L))
 
         println("Overlapping error inducing inputs from two lineages : " +
           overlap.count)
@@ -168,6 +161,8 @@ object student_info {
           val list = s.split(" ")
           ((list(4).toInt, list(5)), list(3).toInt)
         })
+
+
 
         val delta_debug = new DD[((Int, String), Int)]
         var returnList = delta_debug.ddgen(mappedRDD, new Test, new Split_v2, lm, fh, List(false, false))
@@ -180,6 +175,8 @@ object student_info {
             val list = s.split(" ")
             ((list(4).toInt, list(5)), list(3).toInt)
           })
+          .subtract(mappedRDD)
+
           val delta_debug2 = new DD[((Int, String), Int)]
           returnList = delta_debug2.ddgen(mappedRdd1, new Test, new Split_v2, lm, fh, returnList)
         }
@@ -189,6 +186,8 @@ object student_info {
             val list = s.split(" ")
             ((list(4).toInt, list(5)), list(3).toInt)
           })
+          .subtract(mappedRDD)
+          
           val delta_debug3 = new DD[((Int, String), Int)]
           returnList = delta_debug3.ddgen(mappedRdd2, new Test, new Split_v2, lm, fh, returnList)
         }
