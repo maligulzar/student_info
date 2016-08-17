@@ -16,8 +16,9 @@ for a in range(1,results.num):
 	month = str(random.randint(1, 12))
 	day = str(random.randint(1, 30))
 	year = str(random.randint(1988, 2000))
+	year_College = str(random.randint(1,4))
 	phone_number = str(random.randint(2000000000, 9999999999))
-	line = name + " " + month+"/" + day+ "/" + year + " " + phone_number + "\n"
+	line = name + " " + year_College+" "+  month+"/" + day+ "/" + year + " " + phone_number + "\n"
 	f.write(line)
 f.close()
 
